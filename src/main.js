@@ -1,11 +1,11 @@
 function refreshDataSheet(){
   const akerunManager = new AkerunManager();
-  const today = dayjs.dayjs().locale('ja');
-
-  const accessList = akerunManager.getAccessList(1000).filter(a => a.isSameDay(today));
+  const day = dayjs.dayjs().add(-1, 'day');
+  
+  const accessList = akerunManager.getAccessListAllDay(day);
   const akerunUserList = akerunManager.getUserList().filter(akerunUser => {
     akerunUser.findSetAccessLog(accessList);
-    return akerunUser.isExistMail() && akerunUser.isOffice(today);
+    return akerunUser.isExistMail() && akerunUser.isOffice(day);
   });
 
   let sheetEmailList = getMemberEmailList();
@@ -28,7 +28,7 @@ function refreshDataSheet(){
 
   BaseLibrary.setList(
     SHEET.data,
-    getdayList().findIndex(d => d.isSame(today, 'day')) + SHEET.data.row.data,
+    getdayList().findIndex(d => d.isSame(day, 'day')) + SHEET.data.row.data,
     SHEET.data.column.data,
     [sheetEmailList.map(email => akerunUserList.some(user => user.isSameEmail(email)) ? '出' : '')]
   );  
