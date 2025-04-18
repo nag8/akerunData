@@ -25,22 +25,35 @@ class AkerunManager{
   }
 
 
-  getAccessList(limit){
+  getAccessListAllDay(day){
     // https://developers.akerun.com/#list-access
+    const dayText = day.format('YYYY-MM-DD');
 
-    if(limit === undefined){
-      limit = 100;
-    }
     const options = {
+      method: 'get',
       headers : {
         'Authorization': `Bearer ${this.token.access}`,
       },
-      method : 'get',
     };
-  
-    let res = UrlFetchApp.fetch(`https://api.akerun.com/v3/organizations/${this.organizationId}/accesses?limit=${limit}`, options);
-    res = JSON.parse(res);
-    return res.accesses.map(json => new Access(json));
+
+    let accessList = [];
+    let lastId = undefined;
+
+    while(true){
+      let url = `https://api.akerun.com/v3/organizations/${this.organizationId}/accesses`
+        + `?limit=1000&datetime_after=${dayText}T00%3A00%3A00%2B09%3A00&datetime_before=${dayText}T23%3A59%3A59%2B09%3A00`
+        + `&sort_by=id&sort_order=asc`
+        + (!lastId ? '' : `&id_after=${lastId}`);
+     
+      let res = UrlFetchApp.fetch(url, options);
+      res = JSON.parse(res);
+      accessList = accessList.concat(res.accesses.map(json => new Access(json))).filter(a => a.isExistUserId());
+      if(res.accesses.length < 1000){
+        break;
+      }
+      lastId = res.accesses[res.accesses.length - 1].id;
+    }
+    return accessList;
   }
 
   getUserList(){
